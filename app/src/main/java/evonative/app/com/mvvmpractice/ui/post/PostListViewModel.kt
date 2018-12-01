@@ -2,7 +2,9 @@ package evonative.app.com.mvvmpractice.ui.post
 
 import android.arch.lifecycle.MutableLiveData
 import android.view.View
+import evonative.app.com.mvvmpractice.R
 import evonative.app.com.mvvmpractice.base.BaseViewModel
+import evonative.app.com.mvvmpractice.model.Post
 import evonative.app.com.mvvmpractice.network.PostApi
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -15,7 +17,11 @@ class PostListViewModel: BaseViewModel() {
     @Inject
     lateinit var postApi: PostApi
     private lateinit var subscription: Disposable
-    val loadingVisibility: MutableLiveData<Int> = MutableLiveData()
+    val postListAdapter: PostListAdapter = PostListAdapter()
+    val errorMessage:MutableLiveData<Int> = MutableLiveData()
+    val errorClickListener = View.OnClickListener { loadPosts() }
+
+        val loadingVisibility: MutableLiveData<Int> = MutableLiveData()
 
     init {
         loadPosts()
@@ -28,17 +34,17 @@ class PostListViewModel: BaseViewModel() {
             .doOnSubscribe { onRetrievePostListStart() }
             .doOnTerminate { onRetrievePostListFinish() }
             .subscribe(
-                { onRetrievePostListSuccess() },
+                { result ->  onRetrievePostListSuccess(result) },
                 { onRetrievePostListError() }
             )
     }
 
     private fun onRetrievePostListError() {
-
+        errorMessage.value = R.string.post_error
     }
 
-    private fun onRetrievePostListSuccess() {
-
+    private fun onRetrievePostListSuccess(posts : List<Post>) {
+        postListAdapter.updatePostList(posts)
     }
 
     private fun onRetrievePostListFinish() {
@@ -47,6 +53,7 @@ class PostListViewModel: BaseViewModel() {
 
     private fun onRetrievePostListStart() {
         loadingVisibility.value = View.VISIBLE
+        errorMessage.value = null
     }
 
     override fun onCleared() {
